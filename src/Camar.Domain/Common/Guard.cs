@@ -19,4 +19,13 @@ public static class Guard
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value, paramName);
         return value;
     }
+
+    public static Guid NotEmpty(
+    Guid value,
+    [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        if (value == Guid.Empty)
+            throw new ArgumentException("No puede ser un Guid vacío.", paramName);
+        return value;
+    }
 }
