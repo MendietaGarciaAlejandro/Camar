@@ -31,9 +31,6 @@ public class PeriodTests
     public void Overlaps_DevuelveLoEsperado(int aStart, int aEnd, int bStart, int bEnd, bool esperado)
     {
         // Arrange: usa el helper At(...) para construir a y b
-        _ = new DateTimeOffset(
-            2026, 1, 15, 0, 0, 0, TimeSpan.Zero
-        );
         var a = At(aStart, aEnd);
         var b = At(bStart, bEnd);
 
@@ -42,5 +39,16 @@ public class PeriodTests
 
         // Assert: Assert.Equal(esperado, resultado)
         Assert.Equal(esperado, resultado);
+    }
+
+    [Theory]
+    [InlineData(8, 10, 9, 11)]   // solapan
+    [InlineData(8, 9, 10, 11)]   // no solapan
+    public void Overlaps_EsSimetrico(int aStart, int aEnd, int bStart, int bEnd)
+    {
+        // construye a y b con At(...), y asserta que ambas direcciones coinciden
+        var a = At(aStart, aEnd);
+        var b = At(bStart, bEnd);
+        Assert.Equal(a.Overlaps(b), b.Overlaps(a));
     }
 }
