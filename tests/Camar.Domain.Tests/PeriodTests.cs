@@ -51,4 +51,16 @@ public class PeriodTests
         var b = At(bStart, bEnd);
         Assert.Equal(a.Overlaps(b), b.Overlaps(a));
     }
+
+    [Fact]
+    public void Duration_DevuelveLaDiferenciaEntreInicioYFin()
+    {
+        // Arrange: 10:00 → 11:30
+        var inicio = new DateTimeOffset(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
+        var fin = new DateTimeOffset(2026, 1, 15, 11, 30, 0, TimeSpan.Zero);
+        var periodo = new Period(inicio, fin);
+
+        // Act + Assert
+        Assert.Equal(TimeSpan.FromMinutes(90), periodo.Duration);
+    }
 }

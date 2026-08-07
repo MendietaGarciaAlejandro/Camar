@@ -4,6 +4,7 @@
     {
         public readonly DateTimeOffset Start { get; }
         public readonly DateTimeOffset End { get; }
+        public TimeSpan Duration => End - Start;
 
         public Period(DateTimeOffset start, DateTimeOffset end)
         {
