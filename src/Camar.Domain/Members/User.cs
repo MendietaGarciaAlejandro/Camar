@@ -21,5 +21,17 @@ namespace Camar.Domain.Members
             Role = UserRole.Member;
             CreatedAt = createdAt;
         }
+
+        /// <summary>
+        /// Da permisos de administracion. No se puede hacer desde el registro publico:
+        /// tiene que venir de una operacion deliberada.
+        /// </summary>
+        public void PromoteToAdmin()
+        {
+            if (Role == UserRole.Admin)
+                throw new InvalidOperationException("El usuario ya es administrador.");
+
+            Role = UserRole.Admin;
+        }
     }
 }

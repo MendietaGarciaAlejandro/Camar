@@ -11,6 +11,7 @@ public class ReservationService(
     IReservationRepository reservations,
     IResourceRepository resources,
     IUserRepository users,
+    IBlockedDayRepository blockedDays,
     TimeProvider clock)
 {
     public async Task<Reservation> CreateAsync(
@@ -43,6 +44,9 @@ public class ReservationService(
 
         var today = DateOnly.FromDateTime(clock.GetUtcNow().Date);
         var reservationDate = DateOnly.FromDateTime(period.Start.Date);
+
+        if (await blockedDays.GetByDateAsync(reservationDate, ct) is { } blocked)
+            throw new BusinessRuleException($"El {blocked.Date:dd/MM/yyyy} el coworking no abre: {blocked.Reason}.");
 
         if (!MembershipPolicy.CanBookOn(user.MembershipPlan, today, reservationDate))
         {

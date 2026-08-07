@@ -1,11 +1,13 @@
 using Camar.Api.Contracts;
 using Camar.Application.Abstractions;
 using Camar.Application.Reservations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Camar.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/resources")]
 public sealed class ResourcesController(
     IResourceRepository resources,

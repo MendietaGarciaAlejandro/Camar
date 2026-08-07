@@ -1,13 +1,28 @@
+using System.Text;
 using Camar.Api.ErrorHandling;
+using Camar.Application.Abstractions;
+using Camar.Application.Auth;
 using Camar.Application.Reservations;
 using Camar.Infrastructure;
 using Camar.Infrastructure.Persistence;
+using Camar.Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("Camar")
     ?? throw new InvalidOperationException(
         "Falta la cadena de conexion 'Camar'. En desarrollo se configura con user-secrets.");
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+
+var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException("Falta la seccion 'Jwt' de configuracion.");
+
+if (string.IsNullOrWhiteSpace(jwt.SigningKey))
+    throw new InvalidOperationException(
+        "Falta 'Jwt:SigningKey'. En desarrollo se configura con user-secrets.");
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -16,7 +31,28 @@ builder.Services.AddInfrastructure(connectionString);
 
 builder.Services.AddScoped<ReservationService>();
 builder.Services.AddScoped<AvailabilityService>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            // Sin margen extra: un token caducado deja de valer al segundo.
+            ClockSkew = TimeSpan.Zero,
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
@@ -33,11 +69,13 @@ if (app.Environment.IsDevelopment())
     await DevelopmentSeeder.SeedAsync(
         scope.ServiceProvider.GetRequiredService<CamarDbContext>(),
         scope.ServiceProvider.GetRequiredService<TimeProvider>(),
+        scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
         app.Logger);
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

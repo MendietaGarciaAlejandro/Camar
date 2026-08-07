@@ -1,6 +1,7 @@
 using Camar.Application.Abstractions;
 using Camar.Infrastructure.Persistence;
 using Camar.Infrastructure.Persistence.Repositories;
+using Camar.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +24,10 @@ public static class DependencyInjection
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IBlockedDayRepository, BlockedDayRepository>();
+
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<ITokenGenerator, JwtTokenGenerator>();
 
         return services;
     }

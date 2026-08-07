@@ -2,13 +2,9 @@ using Camar.Domain.Reservations;
 
 namespace Camar.Api.Contracts;
 
-/// <summary>
-/// Datos para crear una reserva. UserId viaja en el cuerpo de forma temporal:
-/// cuando exista autenticacion saldra del token y dejara de pedirse aqui.
-/// </summary>
+/// <summary>Datos para crear una reserva. El usuario sale del token.</summary>
 public sealed record CreateReservationRequest(
     Guid ResourceId,
-    Guid UserId,
     DateTimeOffset Start,
     DateTimeOffset End);
 

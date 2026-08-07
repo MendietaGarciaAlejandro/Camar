@@ -1,3 +1,4 @@
+using Camar.Application.Abstractions;
 using Camar.Domain.Members;
 using Camar.Domain.Resources;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +12,13 @@ namespace Camar.Infrastructure.Persistence;
 /// </summary>
 public static class DevelopmentSeeder
 {
+    // Solo para desarrollo: en un entorno real las altas pasan por /api/auth/register.
+    private const string DemoPassword = "camar-demo-2026";
+
     public static async Task SeedAsync(
         CamarDbContext db,
         TimeProvider clock,
+        IPasswordHasher passwordHasher,
         ILogger? logger = null,
         CancellationToken ct = default)
     {
@@ -32,14 +37,19 @@ public static class DevelopmentSeeder
             new Resource("Mesa flexible 2", ResourceType.HotDesk, 1),
             new Resource("Cabina de llamadas", ResourceType.PhoneBooth, 1));
 
-        // El hash real llegara con el registro de usuarios; aqui solo hace falta que exista.
-        const string placeholderHash = "sin-registro-todavia";
+        var hash = passwordHasher.Hash(DemoPassword);
+
+        var admin = new User("admin@camar.test", "Marta Sanz", hash, MembershipPlan.Flex, now);
+        admin.PromoteToAdmin();
 
         db.Users.AddRange(
-            new User("ana@camar.test", "Ana Ruiz", placeholderHash, MembershipPlan.Flex, now),
-            new User("luis@camar.test", "Luis Marin", placeholderHash, MembershipPlan.DayPass, now));
+            admin,
+            new User("ana@camar.test", "Ana Ruiz", hash, MembershipPlan.Flex, now),
+            new User("luis@camar.test", "Luis Marin", hash, MembershipPlan.DayPass, now));
 
         await db.SaveChangesAsync(ct);
+
+        logger?.LogInformation("Seed cargado. Contrasena de los usuarios de demo: {Password}", DemoPassword);
 
         await LogUsersAsync(db, logger, ct);
     }
@@ -51,6 +61,6 @@ public static class DevelopmentSeeder
             return;
 
         foreach (var user in await db.Users.AsNoTracking().ToListAsync(ct))
-            logger.LogInformation("Usuario de desarrollo {Email} -> {Id}", user.Email, user.Id);
+            logger.LogInformation("Usuario de desarrollo {Email} ({Role}) -> {Id}", user.Email, user.Role, user.Id);
     }
 }

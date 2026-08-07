@@ -21,6 +21,7 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
         var (status, title) = domainException switch
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado"),
+            UnauthorizedException => (StatusCodes.Status401Unauthorized, "No autorizado"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflicto con el estado actual"),
             BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Regla de negocio incumplida"),
             _ => (StatusCodes.Status400BadRequest, "Peticion invalida"),

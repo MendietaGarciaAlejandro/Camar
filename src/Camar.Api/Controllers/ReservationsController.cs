@@ -3,11 +3,13 @@ using Camar.Application.Abstractions;
 using Camar.Application.Reservations;
 using Camar.Domain.Common;
 using Camar.Domain.Reservations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Camar.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/reservations")]
 public sealed class ReservationsController(
     ReservationService reservations,
@@ -16,6 +18,7 @@ public sealed class ReservationsController(
     /// <summary>Crea una reserva confirmada si cumple todas las reglas del coworking.</summary>
     [HttpPost]
     [ProducesResponseType<ReservationResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -36,7 +39,7 @@ public sealed class ReservationsController(
         }
 
         var reservation = await reservations.CreateAsync(
-            request.UserId, request.ResourceId, period, ct);
+            User.GetUserId(), request.ResourceId, period, ct);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -44,41 +47,39 @@ public sealed class ReservationsController(
             ReservationResponse.From(reservation));
     }
 
-    /// <summary>Devuelve una reserva concreta.</summary>
+    /// <summary>Devuelve una reserva propia.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<ReservationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ReservationResponse>> GetById(Guid id, CancellationToken ct)
     {
-        var reservation = await repository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException($"No existe la reserva {id}.");
+        var reservation = await repository.GetByIdAsync(id, ct);
+
+        // Las reservas ajenas se tratan como inexistentes para no filtrar ids validos.
+        if (reservation is null || reservation.UserId != User.GetUserId())
+            throw new NotFoundException($"No existe la reserva {id}.");
 
         return Ok(ReservationResponse.From(reservation));
     }
 
-    /// <summary>Cancela una reserva. Devuelve el importe reembolsado segun la antelacion.</summary>
+    /// <summary>Cancela una reserva propia. Devuelve el importe reembolsado.</summary>
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType<ReservationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ReservationResponse>> Cancel(
-        Guid id,
-        [FromQuery] Guid userId,
-        CancellationToken ct)
+    public async Task<ActionResult<ReservationResponse>> Cancel(Guid id, CancellationToken ct)
     {
-        var reservation = await reservations.CancelAsync(id, userId, ct);
+        var reservation = await reservations.CancelAsync(id, User.GetUserId(), ct);
 
         return Ok(ReservationResponse.From(reservation));
     }
 
-    /// <summary>Reservas de un usuario, de la mas reciente a la mas antigua.</summary>
+    /// <summary>Reservas del usuario autenticado, de la mas reciente a la mas antigua.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<ReservationResponse>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<ReservationResponse>>> GetByUser(
-        [FromQuery] Guid userId,
-        CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<ReservationResponse>>> GetMine(CancellationToken ct)
     {
-        var found = await repository.GetByUserAsync(userId, ct);
+        var found = await repository.GetByUserAsync(User.GetUserId(), ct);
 
         return Ok(found.Select(ReservationResponse.From).ToList());
     }

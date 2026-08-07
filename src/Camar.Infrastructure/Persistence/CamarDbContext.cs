@@ -1,6 +1,7 @@
 ﻿using Camar.Domain.Members;
 using Camar.Domain.Reservations;
 using Camar.Domain.Resources;
+using Camar.Domain.Scheduling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Camar.Infrastructure.Persistence;
@@ -15,6 +16,7 @@ public class CamarDbContext : DbContext
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<BlockedDay> BlockedDays => Set<BlockedDay>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -7,7 +7,8 @@ namespace Camar.Application.Reservations;
 
 public class AvailabilityService(
     IReservationRepository reservations,
-    IResourceRepository resources)
+    IResourceRepository resources,
+    IBlockedDayRepository blockedDays)
 {
     /// <summary>
     /// Bloques de media hora libres de un recurso en un dia. Vacio si esta cerrado.
@@ -24,6 +25,9 @@ public class AvailabilityService(
             throw new BusinessRuleException($"El recurso '{resource.Name}' no esta disponible.");
 
         if (OpeningHoursPolicy.GetHours(date.DayOfWeek) is not (var opens, var closes))
+            return [];
+
+        if (await blockedDays.GetByDateAsync(date, ct) is not null)
             return [];
 
         // Solo se traen las reservas que tocan ese dia, no todo el historico del recurso.

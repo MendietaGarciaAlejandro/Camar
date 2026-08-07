@@ -13,3 +13,6 @@ public sealed class BusinessRuleException(string message) : DomainException(mess
 
 /// <summary>La operacion choca con el estado actual de los datos.</summary>
 public sealed class ConflictException(string message) : DomainException(message);
+
+/// <summary>Credenciales invalidas.</summary>
+public sealed class UnauthorizedException(string message) : DomainException(message);

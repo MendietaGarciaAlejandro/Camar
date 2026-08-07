@@ -39,6 +39,20 @@ public sealed class ReservationRepository(CamarDbContext db) : IReservationRepos
         }
     }
 
+    public async Task<IReadOnlyList<Reservation>> GetAllAsync(
+        Guid? resourceId = null, CancellationToken ct = default)
+    {
+        var query = db.Reservations.AsQueryable();
+
+        if (resourceId is { } id)
+            query = query.Where(r => r.ResourceId == id);
+
+        var found = await query.ToListAsync(ct);
+
+        // Igual que en GetByUserAsync: el inicio del rango no se traduce a SQL.
+        return found.OrderByDescending(r => r.Period.Start).ToList();
+    }
+
     public Task UpdateAsync(Reservation reservation, CancellationToken ct = default)
     {
         db.Reservations.Update(reservation);
