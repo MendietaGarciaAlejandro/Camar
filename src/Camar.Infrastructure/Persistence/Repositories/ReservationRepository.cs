@@ -8,8 +8,13 @@ namespace Camar.Infrastructure.Persistence.Repositories;
 
 public sealed class ReservationRepository(CamarDbContext db) : IReservationRepository
 {
-    // 23P01 = exclusion_violation. Lo lanza la constraint ck_reservations_no_overlap.
+    // 23P01 = exclusion_violation: la constraint ck_reservations_no_overlap rechazo el solapamiento.
     private const string ExclusionViolation = "23P01";
+
+    // 40P01 = deadlock_detected. Con varias reservas simultaneas sobre el mismo hueco, cada
+    // transaccion espera a ver si la anterior confirma; si esas esperas se cruzan, Postgres
+    // mata a una. Para quien reserva significa lo mismo: alguien se le adelanto.
+    private const string DeadlockDetected = "40P01";
 
     // El periodo se guarda como tstzrange, asi que EF no puede traducir r.Period.Start.
     // Se consulta con el operador && de Postgres, que es justo lo que usa la constraint.
@@ -31,12 +36,28 @@ public sealed class ReservationRepository(CamarDbContext db) : IReservationRepos
         {
             await db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: ExclusionViolation })
+        catch (Exception ex) when (IsSlotConflict(ex))
         {
             // Dos peticiones simultaneas pasaron la comprobacion previa y la BD freno a esta.
             // Se traduce aqui para que Application no tenga que conocer Npgsql.
+            db.Entry(reservation).State = EntityState.Detached;
+
             throw new ConflictException("Ese hueco acaba de ser reservado por otra persona.");
         }
+    }
+
+    /// <summary>
+    /// EF envuelve los fallos de Postgres en varias capas, asi que se recorre la cadena entera.
+    /// </summary>
+    private static bool IsSlotConflict(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException { SqlState: ExclusionViolation or DeadlockDetected })
+                return true;
+        }
+
+        return false;
     }
 
     public async Task<IReadOnlyList<Reservation>> GetAllAsync(
