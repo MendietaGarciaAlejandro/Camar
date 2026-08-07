@@ -63,4 +63,33 @@ public class ReservationService(
 
         return reservation;
     }
+
+    /// <summary>
+    /// Cancela una reserva del usuario. El reembolso lo decide la politica de cancelacion.
+    /// </summary>
+    public async Task<Reservation> CancelAsync(
+        Guid reservationId,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var reservation = await reservations.GetByIdAsync(reservationId, ct);
+
+        // Si la reserva es de otro, se responde igual que si no existiera:
+        // asi no se puede averiguar que ids son validos probando.
+        if (reservation is null || reservation.UserId != userId)
+            throw new NotFoundException($"No existe la reserva {reservationId}.");
+
+        try
+        {
+            reservation.Cancel(clock.GetUtcNow());
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ConflictException(ex.Message);
+        }
+
+        await reservations.UpdateAsync(reservation, ct);
+
+        return reservation;
+    }
 }

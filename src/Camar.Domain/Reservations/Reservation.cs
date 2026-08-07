@@ -12,6 +12,7 @@ namespace Camar.Domain.Reservations
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset? CancelledAt { get; private set; }
         public decimal Price { get; private set; }
+        public decimal? RefundAmount { get; private set; }
 
         public Reservation(Guid resourceId, Guid userId, Period period, decimal price, DateTimeOffset createdAt)
         {
@@ -27,11 +28,17 @@ namespace Camar.Domain.Reservations
             CancelledAt = null;
         }
 
+        /// <summary>
+        /// Cancela la reserva y fija el reembolso segun la antelacion del aviso.
+        /// El importe lo decide la politica: no se puede pasar por fuera.
+        /// </summary>
         public void Cancel(DateTimeOffset cuando)
         {
             EnsureConfirmed();
+
             Status = ReservationStatus.Cancelled;
             CancelledAt = cuando;
+            RefundAmount = CancellationPolicy.CalculateRefund(Period, cuando, Price);
         }
 
         public void Complete()

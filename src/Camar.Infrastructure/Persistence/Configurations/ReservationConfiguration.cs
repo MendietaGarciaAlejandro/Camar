@@ -28,9 +28,12 @@ public sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservat
             .HasPrecision(10, 2)
             .IsRequired();
 
-        // nullable: solo se rellena al cancelar
+        // nullables: solo se rellenan al cancelar
         builder.Property(r => r.CancelledAt)
             .HasColumnType("timestamp with time zone");
+
+        builder.Property(r => r.RefundAmount)
+            .HasPrecision(10, 2);
 
         builder.HasIndex(r => r.ResourceId);
     }

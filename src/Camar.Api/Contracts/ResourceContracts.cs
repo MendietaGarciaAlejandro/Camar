@@ -14,3 +14,10 @@ public sealed record ResourceResponse(
         resource.Type.ToString(),
         resource.Capacity);
 }
+
+public sealed record TimeSlot(DateTimeOffset Start, DateTimeOffset End);
+
+public sealed record AvailabilityResponse(
+    Guid ResourceId,
+    DateOnly Date,
+    IReadOnlyList<TimeSlot> FreeSlots);

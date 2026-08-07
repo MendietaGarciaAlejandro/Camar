@@ -39,6 +39,12 @@ public sealed class ReservationRepository(CamarDbContext db) : IReservationRepos
         }
     }
 
+    public Task UpdateAsync(Reservation reservation, CancellationToken ct = default)
+    {
+        db.Reservations.Update(reservation);
+        return db.SaveChangesAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Reservation>> GetByUserAsync(Guid userId, CancellationToken ct = default)
     {
         var found = await db.Reservations
@@ -52,4 +58,15 @@ public sealed class ReservationRepository(CamarDbContext db) : IReservationRepos
 
     public Task<Reservation?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         db.Reservations.FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public async Task<IReadOnlyList<Reservation>> GetConfirmedInRangeAsync(
+        Guid resourceId, Period range, CancellationToken ct = default) =>
+        await db.Reservations
+            .FromSql($"""
+                SELECT * FROM reservations
+                WHERE resource_id = {resourceId}
+                  AND status = {(int)ReservationStatus.Confirmed}
+                  AND period && tstzrange({range.Start}, {range.End}, '[)')
+                """)
+            .ToListAsync(ct);
 }

@@ -21,7 +21,8 @@ public sealed record ReservationResponse(
     string Status,
     decimal Price,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? CancelledAt)
+    DateTimeOffset? CancelledAt,
+    decimal? RefundAmount)
 {
     public static ReservationResponse From(Reservation reservation) => new(
         reservation.Id,
@@ -32,5 +33,6 @@ public sealed record ReservationResponse(
         reservation.Status.ToString(),
         reservation.Price,
         reservation.CreatedAt,
-        reservation.CancelledAt);
+        reservation.CancelledAt,
+        reservation.RefundAmount);
 }

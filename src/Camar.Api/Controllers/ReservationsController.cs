@@ -56,6 +56,21 @@ public sealed class ReservationsController(
         return Ok(ReservationResponse.From(reservation));
     }
 
+    /// <summary>Cancela una reserva. Devuelve el importe reembolsado segun la antelacion.</summary>
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType<ReservationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ReservationResponse>> Cancel(
+        Guid id,
+        [FromQuery] Guid userId,
+        CancellationToken ct)
+    {
+        var reservation = await reservations.CancelAsync(id, userId, ct);
+
+        return Ok(ReservationResponse.From(reservation));
+    }
+
     /// <summary>Reservas de un usuario, de la mas reciente a la mas antigua.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<ReservationResponse>>(StatusCodes.Status200OK)]

@@ -15,6 +15,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(connectionString);
 
 builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<AvailabilityService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddProblemDetails();
