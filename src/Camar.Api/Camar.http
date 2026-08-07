@@ -1,6 +1,207 @@
-@Camar_HostAddress = http://localhost:5106
+@host = http://localhost:5106
 
-GET {{Camar_HostAddress}}/weatherforecast/
-Accept: application/json
+# Usuarios que crea el seed en Development.
+@password = camar-demo-2026
+@socio = ana@camar.test
+@dayPass = luis@camar.test
+@admin = admin@camar.test
+
+# Lunes. Cambialo a una fecha futura si ha pasado.
+@fecha = 2026-08-10
 
 ###
+# Alta de un socio nuevo. Plan: 1 = Flex, 2 = DayPass.
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "nuevo@camar.test",
+  "fullName": "Socio Nuevo",
+  "password": "una-contrasena-larga",
+  "plan": 1
+}
+
+###
+# Login del socio. Las peticiones siguientes reutilizan este token.
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{socio}}",
+  "password": "{{password}}"
+}
+
+@token = {{login.response.body.$.token}}
+
+###
+# Login del administrador.
+# @name loginAdmin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{admin}}",
+  "password": "{{password}}"
+}
+
+@tokenAdmin = {{loginAdmin.response.body.$.token}}
+
+###
+# Recursos activos. De aqui salen los ids para reservar.
+# @name recursos
+GET {{host}}/api/resources
+Authorization: Bearer {{token}}
+
+# Los indices valen para el seed recien cargado: la lista viene ordenada por nombre,
+# asi que si das de alta recursos nuevos hay que revisarlos.
+@sala = {{recursos.response.body.$[4].id}}
+@cabina = {{recursos.response.body.$[0].id}}
+
+###
+# Huecos de media hora libres de la sala ese dia.
+GET {{host}}/api/resources/{{sala}}/availability?date={{fecha}}
+Authorization: Bearer {{token}}
+
+###
+# Reservar una hora. El usuario sale del token, no se manda aqui.
+# @name reserva
+POST {{host}}/api/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "resourceId": "{{sala}}",
+  "start": "{{fecha}}T10:00:00+00:00",
+  "end": "{{fecha}}T11:00:00+00:00"
+}
+
+@reservaId = {{reserva.response.body.$.id}}
+
+###
+# Detalle de una reserva propia.
+GET {{host}}/api/reservations/{{reservaId}}
+Authorization: Bearer {{token}}
+
+###
+# Mis reservas, de la mas reciente a la mas antigua.
+GET {{host}}/api/reservations
+Authorization: Bearer {{token}}
+
+###
+# Cancelar. Devuelve refundAmount segun la antelacion:
+# 24h o mas -> todo, entre 3 y 24h -> la mitad, menos de 3h -> nada.
+POST {{host}}/api/reservations/{{reservaId}}/cancel
+Authorization: Bearer {{token}}
+
+
+### ---------------------------------------------------------------
+### Cosos que deben fallar
+### ---------------------------------------------------------------
+
+###
+# 409: el hueco ya esta cogido. Lanzalo con la reserva de arriba sin cancelar.
+POST {{host}}/api/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "resourceId": "{{sala}}",
+  "start": "{{fecha}}T10:30:00+00:00",
+  "end": "{{fecha}}T11:30:00+00:00"
+}
+
+###
+# 422: las reservas empiezan y terminan en punto o y media.
+POST {{host}}/api/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "resourceId": "{{sala}}",
+  "start": "{{fecha}}T10:15:00+00:00",
+  "end": "{{fecha}}T11:15:00+00:00"
+}
+
+###
+# 422: fuera del horario de apertura (cierra a las 21:00).
+POST {{host}}/api/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "resourceId": "{{sala}}",
+  "start": "{{fecha}}T22:00:00+00:00",
+  "end": "{{fecha}}T23:00:00+00:00"
+}
+
+###
+# 422: la cabina es de uso expres, maximo una hora.
+POST {{host}}/api/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "resourceId": "{{cabina}}",
+  "start": "{{fecha}}T10:00:00+00:00",
+  "end": "{{fecha}}T12:00:00+00:00"
+}
+
+###
+# 401: sin token.
+GET {{host}}/api/resources
+
+###
+# 403: un socio normal no entra en los endpoints de administracion.
+GET {{host}}/api/admin/reservations
+Authorization: Bearer {{token}}
+
+
+### ---------------------------------------------------------------
+### Administracion
+### ---------------------------------------------------------------
+
+###
+# Todas las reservas del coworking. Acepta ?resourceId= para filtrar.
+GET {{host}}/api/admin/reservations
+Authorization: Bearer {{tokenAdmin}}
+
+###
+# Alta de recurso. Tipo: 1 = sala, 2 = mesa flexible, 3 = cabina.
+# @name nuevoRecurso
+POST {{host}}/api/admin/resources
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "name": "Sala Lyra",
+  "type": 1,
+  "capacity": 4
+}
+
+###
+# Baja logica: deja de poder reservarse pero conserva su historial.
+DELETE {{host}}/api/admin/resources/{{nuevoRecurso.response.body.$.id}}
+Authorization: Bearer {{tokenAdmin}}
+
+###
+# Dias en los que el coworking no abre.
+GET {{host}}/api/admin/blocked-days
+Authorization: Bearer {{tokenAdmin}}
+
+###
+# Bloquear un dia. Despues, reservar ese dia da 422 y su disponibilidad sale vacia.
+# @name diaBloqueado
+POST {{host}}/api/admin/blocked-days
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "date": "2026-08-11",
+  "reason": "Puente de agosto"
+}
+
+###
+# Volver a abrirlo.
+DELETE {{host}}/api/admin/blocked-days/{{diaBloqueado.response.body.$.id}}
+Authorization: Bearer {{tokenAdmin}}
