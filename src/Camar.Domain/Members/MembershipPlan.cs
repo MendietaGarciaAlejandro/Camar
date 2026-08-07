@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+namespace Camar.Domain.Members;
 
-namespace Camar.Domain.Members
+public enum MembershipPlan
 {
-    public enum MembershipPlan
-    {
-        Flex = 1,
-        DayPass = 2,
-    }
+    Flex = 1,
+    DayPass = 2,
 }

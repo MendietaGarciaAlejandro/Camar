@@ -1,7 +1,7 @@
-﻿namespace Camar.Domain.Tests;
 
 using Camar.Domain.Reservations;
 
+namespace Camar.Domain.Tests;
 public class PeriodTests
 {
     // Helper: construye un Period en un día fijo, a partir de horas enteras.

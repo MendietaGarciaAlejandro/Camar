@@ -1,4 +1,4 @@
-﻿using Camar.Domain.Resources;
+using Camar.Domain.Resources;
 
 namespace Camar.Application.Abstractions;
 

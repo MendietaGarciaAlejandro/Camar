@@ -1,4 +1,4 @@
-﻿namespace Camar.Domain.Members;
+namespace Camar.Domain.Members;
 
 public enum UserRole
 {

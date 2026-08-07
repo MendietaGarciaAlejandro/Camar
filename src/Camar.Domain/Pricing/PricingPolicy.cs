@@ -1,4 +1,4 @@
-﻿using Camar.Domain.Reservations;
+using Camar.Domain.Reservations;
 using Camar.Domain.Resources;
 
 namespace Camar.Domain.Pricing;

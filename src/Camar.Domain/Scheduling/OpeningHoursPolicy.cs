@@ -1,7 +1,16 @@
-﻿using Camar.Domain.Reservations;
+using Camar.Domain.Reservations;
 
 namespace Camar.Domain.Scheduling;
 
+/// <summary>
+/// Horario de apertura de Camar Coworking.
+///
+/// LIMITACION CONOCIDA: se da por hecho que el offset del DateTimeOffset recibido ya
+/// corresponde a la hora local del coworking, en vez de convertir el instante con la
+/// zona horaria real (Europe/Madrid). Con un cliente en otro huso, o cruzando el cambio
+/// de hora, las comprobaciones de franja no serian correctas. Se resolveria pasando la
+/// zona como TimeZoneInfo y convirtiendo el instante antes de mirar hora y dia.
+/// </summary>
 public static class OpeningHoursPolicy
 {
     // Devuelve el horario de ese día, o null si está cerrado.

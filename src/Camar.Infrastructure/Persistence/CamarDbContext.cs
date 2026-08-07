@@ -1,4 +1,4 @@
-﻿using Camar.Domain.Members;
+using Camar.Domain.Members;
 using Camar.Domain.Reservations;
 using Camar.Domain.Resources;
 using Camar.Domain.Scheduling;

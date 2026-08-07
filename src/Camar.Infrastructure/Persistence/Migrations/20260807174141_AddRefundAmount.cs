@@ -1,30 +1,29 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Camar.Infrastructure.Persistence.Migrations
+namespace Camar.Infrastructure.Persistence.Migrations;
+
+/// <inheritdoc />
+public partial class AddRefundAmount : Migration
 {
     /// <inheritdoc />
-    public partial class AddRefundAmount : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<decimal>(
-                name: "refund_amount",
-                table: "reservations",
-                type: "numeric(10,2)",
-                precision: 10,
-                scale: 2,
-                nullable: true);
-        }
+        migrationBuilder.AddColumn<decimal>(
+            name: "refund_amount",
+            table: "reservations",
+            type: "numeric(10,2)",
+            precision: 10,
+            scale: 2,
+            nullable: true);
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "refund_amount",
-                table: "reservations");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn(
+            name: "refund_amount",
+            table: "reservations");
     }
 }

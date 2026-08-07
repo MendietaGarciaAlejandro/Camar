@@ -1,4 +1,4 @@
-﻿namespace Camar.Domain.Common;
+namespace Camar.Domain.Common;
 
 /// <summary>
 /// Base de los fallos de negocio. La capa Api las traduce a respuestas HTTP.

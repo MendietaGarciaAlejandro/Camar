@@ -1,25 +1,24 @@
-﻿namespace Camar.Domain.Reservations
+namespace Camar.Domain.Reservations;
+
+public readonly record struct Period
 {
-    public readonly record struct Period
+    public readonly DateTimeOffset Start { get; }
+    public readonly DateTimeOffset End { get; }
+    public TimeSpan Duration => End - Start;
+
+    public Period(DateTimeOffset start, DateTimeOffset end)
     {
-        public readonly DateTimeOffset Start { get; }
-        public readonly DateTimeOffset End { get; }
-        public TimeSpan Duration => End - Start;
-
-        public Period(DateTimeOffset start, DateTimeOffset end)
+        if (end <= start)
         {
-            if (end <= start)
-            {
-                throw new ArgumentException("El fin debe ser posterior al inicio.", nameof(end));
-            }
-            Start = start;
-            End = end;
+            throw new ArgumentException("El fin debe ser posterior al inicio.", nameof(end));
         }
-
-        public bool Overlaps(Period other)
-        {
-            return Start < other.End && End > other.Start;
-        }
-
+        Start = start;
+        End = end;
     }
+
+    public bool Overlaps(Period other)
+    {
+        return Start < other.End && End > other.Start;
+    }
+
 }

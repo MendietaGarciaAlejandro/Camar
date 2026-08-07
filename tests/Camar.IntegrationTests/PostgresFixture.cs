@@ -10,8 +10,7 @@ namespace Camar.IntegrationTests;
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-        .WithImage("postgres:18-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:18-alpine")
         .WithDatabase("camar_tests")
         .Build();
 
