@@ -11,12 +11,15 @@ namespace Camar.Domain.Reservations
         public ReservationStatus Status { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset? CancelledAt { get; private set; }
+        public decimal Price { get; private set; }
 
-        public Reservation(Guid resourceId, Guid userId, Period period, DateTimeOffset createdAt)
+        public Reservation(Guid resourceId, Guid userId, Period period, decimal price, DateTimeOffset createdAt)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(price, nameof(price));
             ResourceId = Guard.NotEmpty(resourceId);
             UserId = Guard.NotEmpty(userId);
             Period = period;
+            Price = price;
 
             Id = Guid.CreateVersion7();
             Status = ReservationStatus.Confirmed;

@@ -21,4 +21,10 @@ public static class BookingRules
 
     public static bool IsAligned(Period period) =>
         IsAligned(period.Start) && IsAligned(period.End);
+
+    public static bool IsValidDuration(ResourceType type, Period period)
+    {
+        var (min, max) = DurationLimits(type);
+        return period.Duration >= min && period.Duration <= max;
+    }
 }

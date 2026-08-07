@@ -9,7 +9,17 @@ namespace Camar.Domain.Tests
         {
             var dia = new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero);
             var periodo = new Period(dia.AddHours(10), dia.AddHours(11));
-            return new Reservation(Guid.NewGuid(), Guid.NewGuid(), periodo, dia);
+            return new Reservation(Guid.NewGuid(), Guid.NewGuid(), periodo, 12.00m, dia);
+        }
+
+        [Fact]
+        public void Constructor_PrecioNegativo_Lanza()
+        {
+            var dia = new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero);
+            var periodo = new Period(dia.AddHours(10), dia.AddHours(11));
+
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => new Reservation(Guid.NewGuid(), Guid.NewGuid(), periodo, -1m, dia));
         }
 
         [Fact]
@@ -22,14 +32,14 @@ namespace Camar.Domain.Tests
         [Fact]
         public void Excepcion_GuidResourceVacio()
         {
-            var reservaRecursoGuidVacio = () => new Reservation(Guid.Empty, Guid.NewGuid(), new Period(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1)), DateTimeOffset.Now);
+            var reservaRecursoGuidVacio = () => new Reservation(Guid.Empty, Guid.NewGuid(), new Period(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1)), 12.00m, DateTimeOffset.Now);
             Assert.Throws<ArgumentException>(reservaRecursoGuidVacio);
         }
 
         [Fact]
         public void Excepcion_GuidUserVacio()
         {
-            var reservaUsuarioGuidVacio = () => new Reservation(Guid.NewGuid(), Guid.Empty, new Period(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1)), DateTimeOffset.Now);
+            var reservaUsuarioGuidVacio = () => new Reservation(Guid.NewGuid(), Guid.Empty, new Period(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1)), 12.00m, DateTimeOffset.Now);
             Assert.Throws<ArgumentException>(reservaUsuarioGuidVacio);
         }
 

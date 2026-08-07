@@ -1,0 +1,66 @@
+using Camar.Application.Abstractions;
+using Camar.Domain.Common;
+using Camar.Domain.Members;
+using Camar.Domain.Pricing;
+using Camar.Domain.Reservations;
+using Camar.Domain.Scheduling;
+
+namespace Camar.Application.Reservations;
+
+public class ReservationService(
+    IReservationRepository reservations,
+    IResourceRepository resources,
+    IUserRepository users,
+    TimeProvider clock)
+{
+    public async Task<Reservation> CreateAsync(
+        Guid userId,
+        Guid resourceId,
+        Period period,
+        CancellationToken ct = default)
+    {
+        var user = await users.GetByIdAsync(userId, ct)
+            ?? throw new NotFoundException($"No existe el usuario {userId}.");
+
+        var resource = await resources.GetByIdAsync(resourceId, ct)
+            ?? throw new NotFoundException($"No existe el recurso {resourceId}.");
+
+        if (!resource.IsActive)
+            throw new BusinessRuleException($"El recurso '{resource.Name}' no esta disponible.");
+
+        if (!BookingRules.IsAligned(period))
+            throw new BusinessRuleException("Las reservas empiezan y terminan en punto o y media.");
+
+        if (!BookingRules.IsValidDuration(resource.Type, period))
+        {
+            var (min, max) = BookingRules.DurationLimits(resource.Type);
+            throw new BusinessRuleException(
+                $"Una reserva de {resource.Type} dura entre {min.TotalMinutes:0} y {max.TotalMinutes:0} minutos.");
+        }
+
+        if (!OpeningHoursPolicy.IsWithinOpeningHours(period))
+            throw new BusinessRuleException("La reserva queda fuera del horario de apertura.");
+
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().Date);
+        var reservationDate = DateOnly.FromDateTime(period.Start.Date);
+
+        if (!MembershipPolicy.CanBookOn(user.MembershipPlan, today, reservationDate))
+        {
+            var dias = MembershipPolicy.MaxAdvanceDays(user.MembershipPlan);
+            throw new BusinessRuleException(
+                $"El plan {user.MembershipPlan} reserva como mucho con {dias} dias de antelacion.");
+        }
+
+        // Comprobacion amable: da un error claro en vez de dejar que reviente la constraint.
+        // La garantia real la pone la BD, que rechaza el insert si dos peticiones llegan a la vez.
+        if (await reservations.HasOverlapAsync(resourceId, period, ct))
+            throw new ConflictException("Ese hueco ya esta reservado.");
+
+        var price = PricingPolicy.CalculatePrice(resource.Type, period);
+
+        var reservation = new Reservation(resourceId, userId, period, price, clock.GetUtcNow());
+        await reservations.AddAsync(reservation, ct);
+
+        return reservation;
+    }
+}
