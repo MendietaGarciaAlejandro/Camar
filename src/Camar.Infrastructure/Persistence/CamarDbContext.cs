@@ -1,4 +1,5 @@
-﻿using Camar.Domain.Reservations;
+﻿using Camar.Domain.Members;
+using Camar.Domain.Reservations;
 using Camar.Domain.Resources;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public class CamarDbContext : DbContext
 
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,23 +1,38 @@
+using Camar.Api.ErrorHandling;
+using Camar.Application.Reservations;
+using Camar.Infrastructure;
 using Camar.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var connectionString = builder.Configuration.GetConnectionString("Camar")
+    ?? throw new InvalidOperationException(
+        "Falta la cadena de conexion 'Camar'. En desarrollo se configura con user-secrets.");
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<CamarDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Camar"))
-           .UseSnakeCaseNamingConvention());
+
+builder.Services.AddInfrastructure(connectionString);
+
+builder.Services.AddScoped<ReservationService>();
+builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    using var scope = app.Services.CreateScope();
+    await DevelopmentSeeder.SeedAsync(
+        scope.ServiceProvider.GetRequiredService<CamarDbContext>(),
+        scope.ServiceProvider.GetRequiredService<TimeProvider>(),
+        app.Logger);
 }
 
 app.UseHttpsRedirection();
