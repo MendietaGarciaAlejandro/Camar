@@ -58,7 +58,7 @@ public class ConcurrentBookingTests(PostgresFixture fixture) : IClassFixture<Pos
                 "Socio de prueba",
                 "hash",
                 MembershipPlan.Flex,
-                NifDePrueba(i),
+                NifDePrueba(),
                 new PhoneNumber("600112233"),
                 new PostalCode("28001"),
                 Ahora);
@@ -71,14 +71,18 @@ public class ConcurrentBookingTests(PostgresFixture fixture) : IClassFixture<Pos
         return (resource.Id, [.. created]);
     }
 
+    private static int siguienteNif = 10_000_000;
+
     /// <summary>
-    /// Genera un NIF valido distinto para cada socio. Hace falta porque dos usuarios no
-    /// pueden compartir documento fiscal: seria la misma persona, y hay un indice unico
-    /// en la base de datos que lo impide.
+    /// Genera un NIF valido distinto cada vez que se llama.
+    ///
+    /// El contador es estatico y no un indice del bucle porque todos los tests de la clase
+    /// comparten el mismo contenedor de Postgres: si cada uno empezara a numerar de cero,
+    /// el segundo chocaria contra el indice unico del documento fiscal.
     /// </summary>
-    private static TaxId NifDePrueba(int indice)
+    private static TaxId NifDePrueba()
     {
-        var numero = 10_000_000 + indice;
+        var numero = Interlocked.Increment(ref siguienteNif);
         var letra = "TRWAGMYFPDXBNJZSQVHLCKE"[numero % 23];
 
         return new TaxId($"{numero:D8}{letra}");
