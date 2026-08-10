@@ -54,7 +54,14 @@ public class ConcurrentBookingTests(PostgresFixture fixture) : IClassFixture<Pos
         for (var i = 0; i < users; i++)
         {
             var user = new User(
-                $"socio-{Guid.NewGuid():N}@camar.test", "Socio de prueba", "hash", MembershipPlan.Flex, Ahora);
+                $"socio-{Guid.NewGuid():N}@camar.test",
+                "Socio de prueba",
+                "hash",
+                MembershipPlan.Flex,
+                NifDePrueba(i),
+                new PhoneNumber("600112233"),
+                new PostalCode("28001"),
+                Ahora);
             db.Users.Add(user);
             created.Add(user.Id);
         }
@@ -62,6 +69,19 @@ public class ConcurrentBookingTests(PostgresFixture fixture) : IClassFixture<Pos
         await db.SaveChangesAsync();
 
         return (resource.Id, [.. created]);
+    }
+
+    /// <summary>
+    /// Genera un NIF valido distinto para cada socio. Hace falta porque dos usuarios no
+    /// pueden compartir documento fiscal: seria la misma persona, y hay un indice unico
+    /// en la base de datos que lo impide.
+    /// </summary>
+    private static TaxId NifDePrueba(int indice)
+    {
+        var numero = 10_000_000 + indice;
+        var letra = "TRWAGMYFPDXBNJZSQVHLCKE"[numero % 23];
+
+        return new TaxId($"{numero:D8}{letra}");
     }
 
     [Fact]

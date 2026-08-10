@@ -39,13 +39,24 @@ public static class DevelopmentSeeder
 
         var hash = passwordHasher.Hash(DemoPassword);
 
-        var admin = new User("admin@camar.test", "Marta Sanz", hash, MembershipPlan.Flex, now);
+        // Documentos fiscales validos de verdad: si fueran inventados, el propio dominio
+        // los rechazaria al construir el usuario y el seed reventaria al arrancar.
+        var admin = new User(
+            "admin@camar.test", "Marta Sanz", hash, MembershipPlan.Flex,
+            new TaxId("12345678Z"), new PhoneNumber("600112233"), new PostalCode("28001"),
+            now, new BankAccount("ES9121000418450200051332"));
         admin.PromoteToAdmin();
 
         db.Users.AddRange(
             admin,
-            new User("ana@camar.test", "Ana Ruiz", hash, MembershipPlan.Flex, now),
-            new User("luis@camar.test", "Luis Marin", hash, MembershipPlan.DayPass, now));
+            new User(
+                "ana@camar.test", "Ana Ruiz", hash, MembershipPlan.Flex,
+                new TaxId("00000000T"), new PhoneNumber("611223344"), new PostalCode("08001"),
+                now, new BankAccount("ES7921000813610123456789")),
+            new User(
+                "luis@camar.test", "Luis Marin", hash, MembershipPlan.DayPass,
+                new TaxId("X1234567L"), new PhoneNumber("912345678"), new PostalCode("46001"),
+                now));
 
         await db.SaveChangesAsync(ct);
 

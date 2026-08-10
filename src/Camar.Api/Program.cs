@@ -54,6 +54,24 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// El cliente web de Estanza corre en otro origen, asi que el navegador exige CORS. Los
+// origenes se leen de configuracion en vez de fijarlos aqui: en desarrollo es localhost
+// con el puerto que asigne el servidor de Compose, y en produccion sera otra cosa.
+const string PoliticaCors = "clientes";
+var origenesPermitidos = builder.Configuration
+    .GetSection("Cors:OrigenesPermitidos")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(opciones =>
+{
+    opciones.AddPolicy(PoliticaCors, politica =>
+    {
+        politica.WithOrigins(origenesPermitidos)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
@@ -73,7 +91,14 @@ if (app.Environment.IsDevelopment())
         app.Logger);
 }
 
-app.UseHttpsRedirection();
+// En desarrollo no se fuerza HTTPS: el cliente movil apunta a la IP de la red local por
+// HTTP, porque el certificado de desarrollo no lo acepta un dispositivo Android.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseCors(PoliticaCors);
 
 app.UseAuthentication();
 app.UseAuthorization();

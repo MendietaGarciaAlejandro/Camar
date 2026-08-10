@@ -17,12 +17,34 @@ public class AuthService(
         string fullName,
         string password,
         MembershipPlan plan,
+        string taxId,
+        string phone,
+        string postalCode,
+        string? bankAccount,
         CancellationToken ct = default)
     {
         if (await users.GetByEmailAsync(email, ct) is not null)
             throw new ConflictException("Ese email ya esta registrado.");
 
-        var user = new User(email, fullName, passwordHasher.Hash(password), plan, clock.GetUtcNow());
+        // Los objetos de valor validan al construirse, asi que un documento mal formado
+        // se rechaza aqui y nunca llega a la base de datos.
+        var documento = new TaxId(taxId);
+        var telefono = new PhoneNumber(phone);
+        var codigoPostal = new PostalCode(postalCode);
+        var cuenta = string.IsNullOrWhiteSpace(bankAccount)
+            ? (BankAccount?)null
+            : new BankAccount(bankAccount);
+
+        var user = new User(
+            email,
+            fullName,
+            passwordHasher.Hash(password),
+            plan,
+            documento,
+            telefono,
+            codigoPostal,
+            clock.GetUtcNow(),
+            cuenta);
         await users.AddAsync(user, ct);
 
         return Issue(user);

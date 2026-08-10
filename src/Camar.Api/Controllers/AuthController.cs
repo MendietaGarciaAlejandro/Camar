@@ -5,11 +5,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Camar.Api.Controllers;
 
+/// <summary>
+/// Alta de socio. Ademas de las credenciales se piden los datos de facturacion: sin
+/// documento fiscal no se le puede emitir una factura, y el coworking factura cada reserva.
+/// La cuenta bancaria es opcional porque solo hace falta si domicilia los pagos.
+/// </summary>
 public sealed record RegisterRequest(
     [Required, EmailAddress, MaxLength(256)] string Email,
     [Required, MaxLength(200)] string FullName,
     [Required, MinLength(8), MaxLength(128)] string Password,
-    MembershipPlan Plan);
+    MembershipPlan Plan,
+    [Required, MaxLength(20)] string TaxId,
+    [Required, MaxLength(20)] string Phone,
+    [Required, MaxLength(10)] string PostalCode,
+    [MaxLength(40)] string? BankAccount = null);
 
 public sealed record LoginRequest(
     [Required, EmailAddress] string Email,
@@ -28,7 +37,15 @@ public sealed class AuthController(AuthService auth) : ControllerBase
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct)
     {
         var result = await auth.RegisterAsync(
-            request.Email, request.FullName, request.Password, request.Plan, ct);
+            request.Email,
+            request.FullName,
+            request.Password,
+            request.Plan,
+            request.TaxId,
+            request.Phone,
+            request.PostalCode,
+            request.BankAccount,
+            ct);
 
         return Created(string.Empty, ToResponse(result));
     }
