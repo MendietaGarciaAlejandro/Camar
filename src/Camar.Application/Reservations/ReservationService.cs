@@ -3,6 +3,7 @@ using Camar.Domain.Common;
 using Camar.Domain.Members;
 using Camar.Domain.Pricing;
 using Camar.Domain.Reservations;
+using Camar.Domain.Resources;
 using Camar.Domain.Scheduling;
 
 namespace Camar.Application.Reservations;
@@ -36,7 +37,7 @@ public class ReservationService(
         {
             var (min, max) = BookingRules.DurationLimits(resource.Type);
             throw new BusinessRuleException(
-                $"Una reserva de {resource.Type} dura entre {min.TotalMinutes:0} y {max.TotalMinutes:0} minutos.");
+                $"Una reserva de {resource.Type.DisplayName()} dura {DurationText.DescribeRange(min, max)}.");
         }
 
         if (!OpeningHoursPolicy.IsWithinOpeningHours(period))
@@ -52,7 +53,8 @@ public class ReservationService(
         {
             var dias = MembershipPolicy.MaxAdvanceDays(user.MembershipPlan);
             throw new BusinessRuleException(
-                $"El plan {user.MembershipPlan} reserva como mucho con {dias} dias de antelacion.");
+                $"El plan {user.MembershipPlan.DisplayName()} reserva como mucho con " +
+                (dias == 1 ? "un dia de antelacion." : $"{dias} dias de antelacion."));
         }
 
         // Comprobacion amable: da un error claro en vez de dejar que reviente la constraint.
