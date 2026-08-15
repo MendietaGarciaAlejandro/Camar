@@ -49,6 +49,23 @@ public class ReservationService(
         if (await blockedDays.GetByDateAsync(reservationDate, ct) is { } blocked)
             throw new BusinessRuleException($"El {blocked.Date:dd/MM/yyyy} el coworking no abre: {blocked.Reason}.");
 
+        // CanBookOn rechaza dos cosas distintas: el pasado y lo que queda fuera de la
+        // ventana del plan. Si se resuelven con el mismo mensaje, quien intenta reservar un
+        // dia que ya paso se lleva un "reserva como mucho con 7 dias de antelacion" que no
+        // le dice nada de lo que ha hecho mal.
+        if (reservationDate < today)
+            throw new BusinessRuleException("No se puede reservar un dia que ya ha pasado.");
+
+        // Y dentro del dia de hoy, tampoco una hora que ya ha pasado: comprobar solo la
+        // fecha dejaba reservar esta mañana estando ya por la tarde.
+        //
+        // Comparte la simplificacion de zonas horarias del resto (ver OpeningHoursPolicy):
+        // se compara el instante recibido con el reloj del servidor. Si el coworking
+        // estuviera en otro huso, el margen de error seria el del desfase, y siempre del
+        // lado de dejar pasar alguna de mas y no de rechazar una valida.
+        if (period.Start <= clock.GetUtcNow())
+            throw new BusinessRuleException("No se puede reservar una hora que ya ha pasado.");
+
         if (!MembershipPolicy.CanBookOn(user.MembershipPlan, today, reservationDate))
         {
             var dias = MembershipPolicy.MaxAdvanceDays(user.MembershipPlan);
