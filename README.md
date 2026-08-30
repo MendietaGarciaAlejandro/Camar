@@ -13,29 +13,44 @@ vez. Esto último acabó siendo la parte más interesante con diferencia.
 La API se documenta sola con [Scalar](https://scalar.com), en `/scalar` y solo en desarrollo.
 Además de leerla, desde ahí se lanzan peticiones sin salir del navegador.
 
-![La referencia](docs/portada.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/portada.png">
+  <img alt="La referencia" src="docs/portada-claro.png">
+</picture>
 
 Catorce operaciones repartidas en cuatro grupos. El panel de la derecha es donde se pega el
 token: sin él casi todo contesta 401.
 
-![Iniciar sesión](docs/login.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/login.png">
+  <img alt="Iniciar sesión" src="docs/login-claro.png">
+</picture>
 
 Login y registro son los dos únicos endpoints abiertos, y se les nota en que no llevan
 candado. Devuelve el token, cuándo caduca y el rol, que es lo que decide si aparecen los
 endpoints de administración.
 
-![Reservar](docs/reservar.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/reservar.png">
+  <img alt="Reservar" src="docs/reservar-claro.png">
+</picture>
 
 Una hora de sala en franja punta: 18 €, dos bloques de media hora con el recargo aplicado.
 Arriba a la derecha el candado de *Auth Required*, y abajo los cinco desenlaces posibles. El
 409 es el del hueco ya cogido; el 422, el de las reglas del coworking.
 
-![Huecos libres](docs/disponibilidad.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/disponibilidad.png">
+  <img alt="Huecos libres" src="docs/disponibilidad-claro.png">
+</picture>
 
 Lo que queda libre de un recurso en un día, en bloques de media hora. Aquí salta de las 09:00
 a las 11:00 porque ese hueco ya está reservado.
 
-![Cancelar](docs/cancelar.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/cancelar.png">
+  <img alt="Cancelar" src="docs/cancelar-claro.png">
+</picture>
 
 Al cancelar se devuelve la reserva con lo que se reembolsa. Con más de 24 horas de antelación
 salen los 18 € enteros; por debajo de eso la política empieza a recortar.
