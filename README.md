@@ -8,12 +8,45 @@ Lo monté para practicar dos cosas que me interesaban: modelar un dominio con re
 pisan unas a otras, y resolver bien el problema de que dos personas reserven lo mismo a la
 vez. Esto último acabó siendo la parte más interesante con diferencia.
 
+## Cómo se ve
+
+La API se documenta sola con [Scalar](https://scalar.com), en `/scalar` y solo en desarrollo.
+Además de leerla, desde ahí se lanzan peticiones sin salir del navegador.
+
+![La referencia](docs/portada.png)
+
+Catorce operaciones repartidas en cuatro grupos. El panel de la derecha es donde se pega el
+token: sin él casi todo contesta 401.
+
+![Iniciar sesión](docs/login.png)
+
+Login y registro son los dos únicos endpoints abiertos, y se les nota en que no llevan
+candado. Devuelve el token, cuándo caduca y el rol, que es lo que decide si aparecen los
+endpoints de administración.
+
+![Reservar](docs/reservar.png)
+
+Una hora de sala en franja punta: 18 €, dos bloques de media hora con el recargo aplicado.
+Arriba a la derecha el candado de *Auth Required*, y abajo los cinco desenlaces posibles. El
+409 es el del hueco ya cogido; el 422, el de las reglas del coworking.
+
+![Huecos libres](docs/disponibilidad.png)
+
+Lo que queda libre de un recurso en un día, en bloques de media hora. Aquí salta de las 09:00
+a las 11:00 porque ese hueco ya está reservado.
+
+![Cancelar](docs/cancelar.png)
+
+Al cancelar se devuelve la reserva con lo que se reembolsa. Con más de 24 horas de antelación
+salen los 18 € enteros; por debajo de eso la política empieza a recortar.
+
 ## Stack
 
 - .NET 10, ASP.NET Core con controllers
 - PostgreSQL 18 y EF Core 10 (Npgsql)
 - JWT para autenticación, BCrypt para las contraseñas
 - xUnit, y Testcontainers para los tests de integración
+- Scalar en `/scalar` para consultar la API y probarla a mano
 
 ## Cómo levantarlo
 
@@ -118,10 +151,10 @@ repositorio y orquesta los casos de uso. `Infrastructure` implementa esas interf
 Core. `Api` es el punto de composición.
 
 Los errores de Postgres se traducen a excepciones de dominio dentro de `Infrastructure`, para
-que la capa de aplicación no sepa que existe Npgsql. Las excepciones son tres
-(`NotFoundException`, `BusinessRuleException`, `ConflictException`) y la API las convierte en
-404, 422 y 409 con ProblemDetails. Empecé a hacer una clase por cada regla incumplida y me
-pareció ceremonia sin ganancia.
+que la capa de aplicación no sepa que existe Npgsql. Son cuatro (`NotFoundException`,
+`BusinessRuleException`, `ConflictException` y `UnauthorizedException`) y la API las convierte
+en 404, 422, 409 y 401 con ProblemDetails. Empecé a hacer una clase por cada regla incumplida
+y me pareció ceremonia sin ganancia.
 
 ### Seguridad
 

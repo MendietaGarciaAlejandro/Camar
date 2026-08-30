@@ -38,6 +38,8 @@ builder.Services.AddOpenApi(opciones =>
     opciones.AddDocumentTransformer<InformacionDeLaApi>();
     opciones.AddDocumentTransformer<EsquemaDeSeguridad>();
     opciones.AddOperationTransformer<RequisitoDeSeguridad>();
+    opciones.AddSchemaTransformer<EjemplosDeCamar>();
+    opciones.AddOperationTransformer<EjemplosDeRespuesta>();
 });
 
 builder.Services.AddInfrastructure(connectionString);
@@ -98,7 +100,12 @@ if (app.Environment.IsDevelopment())
 
     // AddOpenApi solo genera el documento; quien lo pinta y deja lanzar peticiones es
     // Scalar. Queda en /scalar y solo en desarrollo.
-    app.MapScalarApiReference(opciones => opciones.Title = "Camar");
+    app.MapScalarApiReference(opciones =>
+    {
+        opciones.Title = "Camar";
+        // La api tiene catorce operaciones: caben todas a la vista sin desplegar nada.
+        opciones.DefaultOpenAllTags = true;
+    });
 
     using var scope = app.Services.CreateScope();
     await DevelopmentSeeder.SeedAsync(
