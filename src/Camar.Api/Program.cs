@@ -1,5 +1,6 @@
-using System.Text;
+﻿using System.Text;
 using Camar.Api.ErrorHandling;
+using Camar.Api.OpenApi;
 using Camar.Application.Abstractions;
 using Camar.Application.Auth;
 using Camar.Application.Reservations;
@@ -7,7 +8,9 @@ using Camar.Infrastructure;
 using Camar.Infrastructure.Persistence;
 using Camar.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +27,18 @@ if (string.IsNullOrWhiteSpace(jwt.SigningKey))
     throw new InvalidOperationException(
         "Falta 'Jwt:SigningKey'. En desarrollo se configura con user-secrets.");
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+// La Api solo habla JSON. Sin esto cada respuesta se anuncia ademas como text/plain y
+// text/json, que son formatos que nadie usa aqui y solo ensucian la documentacion.
+builder.Services.AddControllers(opciones =>
+{
+    opciones.Filters.Add(new ProducesAttribute("application/json"));
+});
+builder.Services.AddOpenApi(opciones =>
+{
+    opciones.AddDocumentTransformer<InformacionDeLaApi>();
+    opciones.AddDocumentTransformer<EsquemaDeSeguridad>();
+    opciones.AddOperationTransformer<RequisitoDeSeguridad>();
+});
 
 builder.Services.AddInfrastructure(connectionString);
 
@@ -82,6 +95,10 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // AddOpenApi solo genera el documento; quien lo pinta y deja lanzar peticiones es
+    // Scalar. Queda en /scalar y solo en desarrollo.
+    app.MapScalarApiReference(opciones => opciones.Title = "Camar");
 
     using var scope = app.Services.CreateScope();
     await DevelopmentSeeder.SeedAsync(
